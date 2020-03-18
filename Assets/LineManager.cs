@@ -23,6 +23,8 @@ public class LineCustom
         _lineRenderer.positionCount = Points.Length;
         _lineRenderer.SetPositions(Points);
     }
+
+    
         
 }
 
@@ -35,9 +37,9 @@ public class LineManager : MonoBehaviour
     public int PointCount = 5;
 
     public Dictionary<ProjectionType, LineCustom> LinesDictionary;
-   
 
     
+
     //public 
     // Start is called before the first frame update
     void Start()

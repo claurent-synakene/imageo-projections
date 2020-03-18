@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 public class GameManager : MonoBehaviour
 {
@@ -9,6 +10,12 @@ public class GameManager : MonoBehaviour
     private LineManager _lineManager;
 
     private TextureGenerator _dataContainer;
+
+
+
+    public SphereLocatorBehavior LineLocator;
+
+    //public trans
     // Start is called before the first frame update
     void Start()
     {
@@ -45,12 +52,10 @@ public class GameManager : MonoBehaviour
             if (Input.GetMouseButton(0))
             {
                 _lineManager.SetEndLine(_dataContainer.cursorGPS);
-
             }
             else if (Input.GetMouseButtonDown(1))
             {
                 _lineManager.SetStartLine(_dataContainer.cursorGPS);
-
             }
 
             List<Vector3> pointsPeters = new List<Vector3>();
@@ -76,7 +81,11 @@ public class GameManager : MonoBehaviour
             _lineManager.SetLine(ProjectionType.Peters, pointsPeters.ToArray());
             _lineManager.SetLine(ProjectionType.AEQD, pointsAEQD.ToArray());
             _lineManager.SetLine(ProjectionType.Mercator, pointsMercator.ToArray());
-            _lineManager.SetLine(ProjectionType.GPS, pointsGPS.ToArray());
+
+            List<Vector3> gpsPoints = LineLocator.GetPositionList(_lineManager.Points.ToList());
+
+            _lineManager.SetLine(ProjectionType.GPS, gpsPoints.ToArray());
+            //_lineManager.SetLine(ProjectionType.GPS, pointsGPS.ToArray());
 
         }
     }
