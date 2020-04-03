@@ -67,6 +67,7 @@
     <Compile Include="Assets\GameManager.cs" />
     <Compile Include="Assets\JSonParser.cs" />
     <Compile Include="Assets\LineManager.cs" />
+    <Compile Include="Assets\ModuleManager.cs" />
     <Compile Include="Assets\SphereLocatorBehavior.cs" />
     <Compile Include="Assets\TextureGenerator.cs" />
     <Reference Include="Unity.Timeline.Editor">

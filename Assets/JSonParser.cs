@@ -265,7 +265,7 @@ public class JSonParser : MonoBehaviour
 
         float Xaxis = Mathf.InverseLerp(minMax.x[0], minMax.x[1], coord.x);
         float Yaxis = Mathf.InverseLerp(minMax.y[0], minMax.y[1], coord.y);
-        print(Yaxis.ToString());
+        //print(Yaxis.ToString());
 
         switch (type)
         {

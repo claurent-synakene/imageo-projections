@@ -4,10 +4,6 @@ using UnityEngine;
 using System;
 using System.Linq;
 
-
-
-
-
 public class CoordinatesConverter : MonoBehaviour
 {
 
@@ -31,30 +27,44 @@ public class CoordinatesConverter : MonoBehaviour
             if (CoordinatesDictionary != null)
             {
                 if (CoordinatesDictionary.Count == 1)
-                {
                     CompleteDictionary(CoordinatesDictionary.First().Key);
-                }
             }
         }
 
         public void CompleteDictionary(ProjectionType knownCoordinate)
         {
-            Vector2 gps = CoordinatesDictionary[ProjectionType.GPS];
-
-            CoordinatesData accurateData = GetAccurateDataFromGPS(gps);
-
-            foreach (var type in (ProjectionType[])Enum.GetValues(typeof(ProjectionType)))
+            if (knownCoordinate == ProjectionType.GPS)
             {
-                if (type != knownCoordinate)
+                Vector2 gps = CoordinatesDictionary[ProjectionType.GPS];
+                CoordinatesData accurateData = GetAccurateDataFromGPS(gps);
+
+                foreach (var type in (ProjectionType[])Enum.GetValues(typeof(ProjectionType)))
                 {
-                    Vector2 reconstructedAccurateCoordinate = accurateData.GetCoordinates(type);
-
-                    CoordinatesDictionary.Add(type, reconstructedAccurateCoordinate);
-
-                    //Debug.Log("Reconstructed accurate : " + type.ToString() + " - " + reconstructedAccurateCoordinate.ToString());
+                    if (type != knownCoordinate)
+                    {
+                        Vector2 reconstructedAccurateCoordinate = accurateData.GetCoordinates(type);
+                        CoordinatesDictionary.Add(type, reconstructedAccurateCoordinate);
+                    }
                 }
             }
+            else
+            {
+                Vector2 coord = CoordinatesDictionary[knownCoordinate];
 
+                Vector2 gps= JSonParser.INSTANCE.GetGPSFrom(knownCoordinate, coord);
+                CoordinatesDictionary.Add(ProjectionType.GPS, gps);
+
+                CoordinatesData accurateData = GetAccurateDataFromGPS(gps);
+
+                foreach (var type in (ProjectionType[])Enum.GetValues(typeof(ProjectionType)))
+                {
+                    if (type != knownCoordinate && type!= ProjectionType.GPS)
+                    {
+                        Vector2 reconstructedAccurateCoordinate = accurateData.GetCoordinates(type);
+                        CoordinatesDictionary.Add(type, reconstructedAccurateCoordinate);
+                    }
+                }
+            }
         }
 
         private CoordinatesData GetAccurateDataFromGPS(Vector2 gps)
@@ -76,6 +86,7 @@ public class CoordinatesConverter : MonoBehaviour
             bottomRightGPS[0] = Mathf.CeilToInt(gps.x);
             bottomRightGPS[1] = Mathf.FloorToInt(gps.y);
 
+            print(gps.ToString());
             topLeft = JSonParser.INSTANCE.CoordinatesDictionary[new GPS(topLeftGPS[0], topLeftGPS[1])];
             topRight = JSonParser.INSTANCE.CoordinatesDictionary[new GPS(topRightGPS[0], topRightGPS[1])];
             bottomLeft = JSonParser.INSTANCE.CoordinatesDictionary[new GPS(bottomLeftGPS[0], bottomLeftGPS[1])];
@@ -108,8 +119,9 @@ public class CoordinatesConverter : MonoBehaviour
         }
     }
 
-
     private static JSonParser _jsp;
+    public List<Vector2> PointList;
+    public List<string> NamesList;
     private List<Coordinates> _coordinatesList;
 
     public Transform gpsTransform;
@@ -117,9 +129,12 @@ public class CoordinatesConverter : MonoBehaviour
     public Transform petersTransform;
     public Transform aeqdTransform;
 
+
+
     public Vector3 gpsPosition;
-    public bool ControlGPS = false;
-    public bool ControlMercator = false;
+    public ProjectionType CurrentControl;
+    private Dictionary<ProjectionType, Transform> Cursors;
+    public TextMesh TextGPS, TextGPS2;
 
     public float scale = .01f;
 
@@ -127,70 +142,100 @@ public class CoordinatesConverter : MonoBehaviour
     {
         _jsp = GetComponent<JSonParser>();
 
-        /*
-        _coordinatesList = new List<Coordinates>();
+        Cursors = new Dictionary<ProjectionType, Transform>();
 
-        Coordinates newPoint = CreatePoint(ProjectionType.GPS, new Vector2(46.2f, 2.2f));
-
-        _coordinatesList.Add(newPoint);
-
-
-        foreach (var point in _coordinatesList)
-        {
-            point.CompleteDictionary();
-        }
-        */
-
-    }
-
-    private Coordinates CreatePoint( ProjectionType type, Vector2 coord)
-    {
-        Coordinates point = new Coordinates(type, coord);
-
-        point.CompleteDictionary();
-        return point;
-
+        Cursors.Add(ProjectionType.GPS, gpsTransform);
+        Cursors.Add(ProjectionType.Mercator, mercatorTransform);
+        Cursors.Add(ProjectionType.Peters, petersTransform);
+        Cursors.Add(ProjectionType.AEQD, aeqdTransform);
     }
 
     // Update is called once per frame
     void Update()
     {
         Coordinates point;
-
+        /*
         if (ControlGPS)
             gpsTransform.localPosition = new Vector3(Mathf.Clamp(gpsPosition.x, -179f, 179f), 0f, Mathf.Clamp(gpsPosition.z, -85f, 85f));
         else
             gpsTransform.localPosition = new Vector3(Mathf.Clamp(gpsTransform.localPosition.x, -179f, 179f), 0f, Mathf.Clamp(gpsTransform.localPosition.z, -85f, 85f));
+            */
 
+        /*
+        point = CreatePoint(CurrentControl, Cursors[CurrentControl].localPosition);
 
-        point = new Coordinates(ProjectionType.GPS, new Vector2(gpsTransform.localPosition.x, gpsTransform.localPosition.z));
-
-        point.CompleteDictionary();
-
-        Vector2 merc = point.CoordinatesDictionary[ProjectionType.Mercator];
-        Vector2 peters = point.CoordinatesDictionary[ProjectionType.Peters];
-        Vector2 aeqd = point.CoordinatesDictionary[ProjectionType.AEQD];
-        //Vector2 peters = point.CoordinatesDictionary[ProjectionType.Peters];
-        //petersTransform.localPosition = new Vector3(peters.x * scale, peters.y * scale, 0f);
-        Vector2 relativeMerc = JSonParser.INSTANCE.GetInverseLerpMinMax(ProjectionType.Mercator, merc);
-        Vector2 relativePeters = JSonParser.INSTANCE.GetInverseLerpMinMax(ProjectionType.Peters, peters);
-        Vector2 relativeAEQD = JSonParser.INSTANCE.GetInverseLerpMinMax(ProjectionType.AEQD, aeqd);
-        //print(merc.ToString());
-
-        // inverse operation
-        Vector2 gpsFromMerc= JSonParser.INSTANCE.GetGPSFrom(ProjectionType.Mercator, relativeMerc);
-
-        mercatorTransform.localPosition = new Vector3(relativeMerc.x * scale,0f, relativeMerc.y * scale);
-        petersTransform.localPosition = new Vector3(relativePeters.x * scale,0f, relativePeters.y * scale);
-        aeqdTransform.localPosition = new Vector3(relativeAEQD.x * scale, 0f, relativeAEQD.y * scale);
-
-        //print("GPS : "+ gpsFromMerc.ToString());
-
+        foreach (var type in (ProjectionType[])Enum.GetValues(typeof(ProjectionType)))
+        {
+            if (type != CurrentControl)
+            {
+                Vector2 coord = point.CoordinatesDictionary[type];
+                Vector2 relativeCoord = JSonParser.INSTANCE.GetInverseLerpMinMax(type, coord);
+                Cursors[type].localPosition = new Vector3(relativeCoord.x * scale, 0f, relativeCoord.y * scale);
+            }
+        }
+        */
     }
 
-    public Coordinates CreatePoint(ProjectionType type, Vector2 coord)
+    private Coordinates CreatePoint(ProjectionType type, Vector3 coord)
     {
-        return new Coordinates(type, coord);
+        return CreatePoint(type, new Vector2(coord.x, coord.z));
+    }
+
+    private Coordinates CreatePoint(ProjectionType type, Vector2 coord)
+    {
+        Coordinates point = new Coordinates(type, coord);
+
+        point.CompleteDictionary();
+        return point;
+    }
+
+    public List<Coordinates> TransformPoints(List<Vector2> points, ProjectionType projection)
+    {
+        List<Coordinates> transformedCoordinates = new List<Coordinates>();
+        return transformedCoordinates;
+    }
+
+    [ContextMenu("TransformPointSerie")]
+    public void TransformPoints()
+    {
+        if (_coordinatesList== null)
+        {
+            _coordinatesList = new List<Coordinates>();
+        }
+        _coordinatesList.Clear();
+        foreach (var point in PointList)
+        {
+            _coordinatesList.Add(CreatePoint(ProjectionType.GPS, new Vector2(point.y,point.x)));
+
+        }
+        UpdatePoints();
+    }
+
+    private void UpdatePoints()
+    {
+        StartCoroutine(UpdatePointsCR());
+    }
+
+    private IEnumerator UpdatePointsCR()
+    {
+        int i = 0;
+        foreach (var point in _coordinatesList)
+        {
+
+            TextGPS.text = "Long : "+point.CoordinatesDictionary[ProjectionType.GPS].x.ToString()+" - Lat : "+point.CoordinatesDictionary[ProjectionType.GPS].y.ToString();
+            foreach (var type in (ProjectionType[])Enum.GetValues(typeof(ProjectionType)))
+            {
+                //if (type != CurrentControl)
+                {
+                    Vector2 coord = point.CoordinatesDictionary[type];
+                    Vector2 relativeCoord = JSonParser.INSTANCE.GetInverseLerpMinMax(type, coord);
+                    Cursors[type].localPosition = new Vector3(relativeCoord.x * scale, 0f, relativeCoord.y * scale);
+                }
+            }
+            TextGPS2.text = NamesList[i];
+            i++;
+            yield return new WaitForSeconds(1f);
+        }
     }
 
 }

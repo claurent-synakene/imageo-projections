@@ -1,12 +1,13 @@
 ﻿<Properties StartupConfiguration="{31108CB6-465A-B323-76B9-3AB6D3F14D0B}|">
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets/CoordinatesConverter.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets/ModuleManager.cs">
     <Files>
       <File FileName="Assets/TextureGenerator.cs" Line="88" Column="10" />
       <File FileName="Assets/LineManager.cs" />
       <File FileName="Assets/SphereLocatorBehavior.cs" />
       <File FileName="Assets/GameManager.cs" />
-      <File FileName="Assets/JSonParser.cs" />
-      <File FileName="Assets/CoordinatesConverter.cs" Line="79" Column="1" />
+      <File FileName="Assets/JSonParser.cs" Line="304" Column="30" />
+      <File FileName="Assets/CoordinatesConverter.cs" Line="234" Column="46" />
+      <File FileName="Assets/ModuleManager.cs" Line="19" Column="26" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.PinnedWatches />
