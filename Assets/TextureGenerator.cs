@@ -75,19 +75,6 @@ public class TextureGenerator : MonoBehaviour
         return gps;
     }
 
-    /*
-    Vector2 GPSToUV( Vector2 gps)
-
-    {
-        Vector2 uv = Vector2.zero;
-
-        print("GPS : " + gps.ToString());
-
-        uv = new Vector2( (gps.x + 180f)/360f,( gps.y + 90f)/180f);
-        print("UV : " + uv.ToString());
-
-        return uv;
-    }*/
 
     CoordinatesData GetDataFromGPS(Vector2 gps)
     {

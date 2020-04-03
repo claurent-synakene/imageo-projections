@@ -1,15 +1,17 @@
 ﻿<Properties StartupConfiguration="{31108CB6-465A-B323-76B9-3AB6D3F14D0B}|">
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets/GameManager.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets/CoordinatesConverter.cs">
     <Files>
-      <File FileName="Assets/TextureGenerator.cs" Line="73" Column="13" />
-      <File FileName="Assets/LineManager.cs" Line="71" Column="21" />
-      <File FileName="Assets/SphereLocatorBehavior.cs" Line="34" Column="45" />
-      <File FileName="Assets/GameManager.cs" Line="80" Column="1" />
+      <File FileName="Assets/TextureGenerator.cs" Line="88" Column="10" />
+      <File FileName="Assets/LineManager.cs" />
+      <File FileName="Assets/SphereLocatorBehavior.cs" />
+      <File FileName="Assets/GameManager.cs" />
+      <File FileName="Assets/JSonParser.cs" />
+      <File FileName="Assets/CoordinatesConverter.cs" Line="79" Column="1" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.PinnedWatches />
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.ItemProperties.Assembly-CSharp PreferredExecutionTarget="ba71704d-4875-49e3-be23-ec3c99fe73e5" />
+  <MonoDevelop.Ide.ItemProperties.Assembly-CSharp PreferredExecutionTarget="84c6445b-5311-4494-b56e-2abea5b2b5d2" />
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
     <BreakpointStore />
   </MonoDevelop.Ide.DebuggingService.Breakpoints>

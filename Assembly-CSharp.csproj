@@ -63,6 +63,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\CoordinatesConverter.cs" />
     <Compile Include="Assets\GameManager.cs" />
     <Compile Include="Assets\JSonParser.cs" />
     <Compile Include="Assets\LineManager.cs" />

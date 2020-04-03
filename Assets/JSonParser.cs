@@ -5,7 +5,7 @@ using UnityEngine;
 // Json serialisation
 
 [System.Serializable]
-public class Coordinates
+public class CoordinatesJSon
 {
     public ProjectionData[] coordinates;
 }
@@ -13,17 +13,17 @@ public class Coordinates
 [System.Serializable]
 public class ProjectionData
 {
-    public int X_wgs84;
-    public int Y_wgs84;
+    public float X_wgs84;
+    public float Y_wgs84;
 
-    public int X_aeqd;
-    public int Y_aeqd;
+    public float X_aeqd;
+    public float Y_aeqd;
 
-    public int X_merc;
-    public int Y_merc;
+    public float X_merc;
+    public float Y_merc;
 
-    public int X_peters;
-    public int Y_peters;
+    public float X_peters;
+    public float Y_peters;
 
 }
 
@@ -31,19 +31,34 @@ public class ProjectionData
 
 public struct GPS
 {
-    public GPS(int x, int y)
+    public GPS(float x, float y)
     {
         X = x;
         Y = y;
     }
 
-    public int X;
-    public int Y;
+    public float X;
+    public float Y;
 }
 
 public struct CoordinatesData
 {
-    public CoordinatesData(int x_aeqd, int y_aeqd, int x_merc, int y_merc, int x_peters, int y_peters, int x_gps, int y_gps)
+    public CoordinatesData(Vector2 aeqd, Vector2 merc, Vector2 peters, Vector2 gps)
+    {
+        X_aeqd = aeqd.x;
+        Y_aeqd = aeqd.y;
+
+        X_merc = merc.x;
+        Y_merc = merc.y;
+
+        X_peters = peters.x;
+        Y_peters = peters.y;
+
+        X_GPS = gps.x;
+        Y_GPS = gps.y;
+
+    }
+    public CoordinatesData(float x_aeqd, float y_aeqd, float x_merc, float y_merc, float x_peters, float y_peters, float x_gps, float y_gps)
     {
         X_aeqd = x_aeqd;
         Y_aeqd = y_aeqd;
@@ -54,21 +69,45 @@ public struct CoordinatesData
         X_peters = x_peters;
         Y_peters = y_peters;
 
-        X_GPS = x_peters;
-        Y_GPS = y_peters;
+        X_GPS = x_gps;
+        Y_GPS = y_gps;
     }
 
-    public int X_aeqd;
-    public int Y_aeqd;
+    public Vector2 GetCoordinates(ProjectionType type)
+    {
+        Vector2 returnValue = Vector2.zero;
+        switch (type)
+        {
+            case ProjectionType.GPS:
+                returnValue = new Vector2(X_GPS, Y_GPS);
+                break;
+            case ProjectionType.AEQD:
+                returnValue = new Vector2(X_aeqd, Y_aeqd);
+                break;
+            case ProjectionType.Mercator:
+                returnValue = new Vector2(X_merc, Y_merc);
+                break;
+            case ProjectionType.Peters:
+                returnValue = new Vector2(X_peters, Y_peters);
+                break;
+            default:
+                break;
+        }
 
-    public int X_merc;
-    public int Y_merc;
+        return returnValue;
+    }
 
-    public int X_peters;
-    public int Y_peters;
+    public float X_aeqd;
+    public float Y_aeqd;
 
-    public int X_GPS;
-    public int Y_GPS;
+    public float X_merc;
+    public float Y_merc;
+
+    public float X_peters;
+    public float Y_peters;
+
+    public float X_GPS;
+    public float Y_GPS;
 }
 
 [SerializeField]
@@ -113,7 +152,25 @@ public enum ProjectionType
 public class JSonParser : MonoBehaviour
 {
     public TextAsset jsonFile;
+    public Texture2D TextureMerc;
 
+    /*
+    public AnimationCurve[] animCurveMercator;
+    public AnimationCurve[] animCurvePeters;
+    */
+    public AnimationCurve MercatorReconstructCurve;
+    public AnimationCurve PetersReconstructCurve;
+    public AnimationCurve AEQDReconstructCurve;
+
+    public AnimationCurve[] animCurveMercatorNormalized;
+    public AnimationCurve[] animCurvePetersNormalized;
+    public AnimationCurve[] animCurveAEQDNormalized;
+
+    public Dictionary<ProjectionType, AnimationCurve[]> CurveDictionary;
+
+    public AnimationCurve customCurve;
+
+    public static JSonParser INSTANCE;
     //public MinMax GPS_MinMax = new MinMax(0);
     //public MinMax Mercator_MinMax = new MinMax(0);
     //public MinMax Aeqd_MinMax = new MinMax(0);
@@ -128,8 +185,54 @@ public class JSonParser : MonoBehaviour
     public Dictionary<GPS, CoordinatesData> CoordinatesDictionary;
     public Dictionary<ProjectionType, MinMax> MinMaxDictionary;
 
+    public bool RegenCurves = false;
+
+    private float _yAxis = 0f;
+
     void Start()
     {
+        INSTANCE = this;
+
+
+        if (RegenCurves)
+        {
+            /*
+            animCurveMercator = new AnimationCurve[4];
+            animCurveMercator[0] = new AnimationCurve();
+            animCurveMercator[1] = new AnimationCurve();
+            animCurveMercator[2] = new AnimationCurve();
+            animCurveMercator[3] = new AnimationCurve();
+
+            animCurvePeters = new AnimationCurve[4];
+            animCurvePeters[0] = new AnimationCurve();
+            animCurvePeters[1] = new AnimationCurve();
+            animCurvePeters[2] = new AnimationCurve();
+            animCurvePeters[3] = new AnimationCurve();
+            */
+            animCurveMercatorNormalized = new AnimationCurve[2];
+            //animCurveMercatorNormalized[0] = new AnimationCurve();
+            //animCurveMercatorNormalized[1] = new AnimationCurve();
+            animCurveMercatorNormalized[0] = new AnimationCurve();
+            animCurveMercatorNormalized[1] = new AnimationCurve();
+
+            animCurvePetersNormalized = new AnimationCurve[2];
+            //animCurvePetersNormalized[0] = new AnimationCurve();
+            //animCurvePetersNormalized[1] = new AnimationCurve();
+            animCurvePetersNormalized[0] = new AnimationCurve();
+            animCurvePetersNormalized[1] = new AnimationCurve();
+
+            animCurveAEQDNormalized = new AnimationCurve[2];
+
+            animCurveAEQDNormalized[0] = new AnimationCurve();
+            animCurveAEQDNormalized[1] = new AnimationCurve();
+            
+
+        }
+        CurveDictionary = new Dictionary<ProjectionType, AnimationCurve[]>();
+        CurveDictionary.Add(ProjectionType.Mercator, animCurveMercatorNormalized);
+        CurveDictionary.Add(ProjectionType.Peters, animCurvePetersNormalized);
+        CurveDictionary.Add(ProjectionType.AEQD, animCurveAEQDNormalized);
+
         Parse();
     }
 
@@ -155,6 +258,56 @@ public class JSonParser : MonoBehaviour
 
     }
 
+    public Vector2 GetInverseLerpMinMax(ProjectionType type, Vector2 coord)
+    {
+
+        MinMax minMax = MinMaxDictionary[type];
+
+        float Xaxis = Mathf.InverseLerp(minMax.x[0], minMax.x[1], coord.x);
+        float Yaxis = Mathf.InverseLerp(minMax.y[0], minMax.y[1], coord.y);
+        print(Yaxis.ToString());
+
+        switch (type)
+        {
+            case ProjectionType.Mercator:
+                Yaxis = MercatorReconstructCurve.Evaluate(Yaxis);
+                break;
+            case ProjectionType.Peters:
+                Yaxis = PetersReconstructCurve.Evaluate(Yaxis);
+                break;
+            case ProjectionType.AEQD:
+                Yaxis = AEQDReconstructCurve.Evaluate(Yaxis);
+                break;
+            default:
+                break;
+        }
+        //Yaxis = customCurve.Evaluate(Yaxis);
+
+        if (type== ProjectionType.AEQD)
+        {
+           // _yAxis = Yaxis;
+
+        }
+        return new Vector2(Xaxis, Yaxis);
+    }
+
+
+    public Vector2 GetGPSFrom(ProjectionType type,Vector2 coord)
+    {
+        Vector2 returnCoord = Vector2.zero;
+
+        returnCoord = new Vector2(CurveDictionary[type][0].Evaluate(coord.x), CurveDictionary[type][1].Evaluate(coord.y));
+
+        return returnCoord;
+    }
+
+    [ContextMenu("AddPoint")]
+    public void AddPoint()
+    {
+
+        customCurve.AddKey(_yAxis, 0.5f);
+    }
+
 
     [ContextMenu("Parse")]
     public void Parse()
@@ -167,68 +320,81 @@ public class JSonParser : MonoBehaviour
         MinMaxDictionary.Add(ProjectionType.Peters, new MinMax(0));
         MinMaxDictionary.Add(ProjectionType.AEQD, new MinMax(0));
 
-        Coordinates Data = JsonUtility.FromJson<Coordinates>(jsonFile.text);
+        CoordinatesJSon Data = JsonUtility.FromJson<CoordinatesJSon>(jsonFile.text);
 
         foreach (ProjectionData c in Data.coordinates)
         {
 
             {
-                CheckMinMax(c.X_wgs84, c.Y_wgs84, ProjectionType.GPS);
-                CheckMinMax(c.X_merc, c.Y_merc, ProjectionType.Mercator);
-                CheckMinMax(c.X_peters, c.X_peters, ProjectionType.Peters);
-                CheckMinMax(c.X_aeqd, c.Y_aeqd, ProjectionType.AEQD);
-                /*
-                if (c.X_wgs84 < GPS_MinMax.x[0])
-                    GPS_MinMax.x[0] = c.X_wgs84;
-                if (c.X_wgs84 > GPS_MinMax.x[1])
-                    GPS_MinMax.x[1] = c.X_wgs84;
-
-                if (c.Y_wgs84 < GPS_MinMax.y[0])
-                    GPS_MinMax.y[0] = c.Y_wgs84;
-                if (c.Y_wgs84 > GPS_MinMax.y[1])
-                    GPS_MinMax.y[1] = c.Y_wgs84;
-                // -----------------------------
-
-                if (c.X_merc < Mercator_MinMax.x[0])
-                    Mercator_MinMax.x[0] = c.X_merc;
-                if (c.X_merc > Mercator_MinMax.x[1])
-                    Mercator_MinMax.x[1] = c.X_merc;
-
-                if (c.Y_merc < Mercator_MinMax.y[0])
-                    Mercator_MinMax.y[0] = c.Y_merc;
-                if (c.Y_merc > Mercator_MinMax.y[1])
-                    Mercator_MinMax.y[1] = c.Y_merc;
-
-                // -----------------------------
-                if (c.X_aeqd < Aeqd_MinMax.x[0])
-                    Aeqd_MinMax.x[0] = c.X_aeqd;
-                if (c.X_aeqd > Aeqd_MinMax.x[1])
-                    Aeqd_MinMax.x[1] = c.X_aeqd;
-
-                if (c.Y_aeqd < Aeqd_MinMax.y[0])
-                    Aeqd_MinMax.y[0] = c.Y_aeqd;
-                if (c.Y_aeqd > Aeqd_MinMax.y[1])
-                    Aeqd_MinMax.y[1] = c.Y_aeqd;
-
-                // -----------------------------
-
-                if (c.X_peters < Peters_MinMax.x[0])
-                    Peters_MinMax.x[0] = c.X_peters;
-                if (c.X_peters > Peters_MinMax.x[1])
-                    Peters_MinMax.x[1] = c.X_peters;
-
-                if (c.Y_peters < Peters_MinMax.y[0])
-                    Peters_MinMax.y[0] = c.Y_peters;
-                if (c.Y_peters > Peters_MinMax.y[1])
-                    Peters_MinMax.y[1] = c.Y_peters;
-                    */
+                CheckMinMax(Mathf.FloorToInt(c.X_wgs84), Mathf.FloorToInt(c.Y_wgs84), ProjectionType.GPS);
+                CheckMinMax(Mathf.FloorToInt(c.X_merc), Mathf.FloorToInt(c.Y_merc), ProjectionType.Mercator);
+                CheckMinMax(Mathf.FloorToInt(c.X_peters), Mathf.FloorToInt(c.X_peters), ProjectionType.Peters);
+                CheckMinMax(Mathf.FloorToInt(c.X_aeqd), Mathf.FloorToInt(c.Y_aeqd), ProjectionType.AEQD);
+                
                 CoordinatesDictionary.Add(new GPS(c.X_wgs84, c.Y_wgs84),
                     new CoordinatesData(c.X_aeqd, c.Y_aeqd, c.X_merc, c.Y_merc, c.X_peters, c.Y_peters, c.X_wgs84, c.Y_wgs84));
             }
-            
-
-            //Debug.Log("Found coordinate : " + coordinate.firstName + " " + coordinate.lastName);
         }
+
+
+        if (RegenCurves)
+        {
+            for (float i = -89f; i < 90f; i++)
+            {
+                if (CoordinatesDictionary.ContainsKey(new GPS(0f,i)))
+                {
+                    var data = CoordinatesDictionary[new GPS(0f, i)];
+
+                    float yMerc = data.Y_merc;
+                    float yPeters = data.Y_peters;
+                    float yAEQD = data.Y_aeqd;
+
+                    /*
+                    animCurveMercator[1].AddKey(i, yMerc);
+                    animCurveMercator[3].AddKey(yMerc,i);
+                    animCurvePeters[1].AddKey(i, yPeters);
+                    animCurvePeters[3].AddKey(yPeters,i);
+                    */
+                    //animCurveMercatorNormalized[1].AddKey(i, GetInverseLerpMinMax(ProjectionType.Mercator, new Vector2(0f, yMerc)).y);
+                    //animCurvePetersNormalized[1].AddKey(i, GetInverseLerpMinMax(ProjectionType.Peters, new Vector2(0f, yPeters)).y);
+                    CurveDictionary[ProjectionType.Mercator][1].AddKey(GetInverseLerpMinMax(ProjectionType.Mercator, new Vector2(0f, yMerc)).y, i);
+                    CurveDictionary[ProjectionType.Peters][1].AddKey(GetInverseLerpMinMax(ProjectionType.Peters, new Vector2(0f, yPeters)).y, i);
+                    CurveDictionary[ProjectionType.AEQD][1].AddKey(GetInverseLerpMinMax(ProjectionType.AEQD, new Vector2(0f, yAEQD)).y, i);
+
+                    //animCurveMercatorNormalized[3].AddKey(GetInverseLerpMinMax(ProjectionType.Mercator, new Vector2(0f, yMerc)).y,i);
+                    //animCurvePetersNormalized[3].AddKey(GetInverseLerpMinMax(ProjectionType.Peters, new Vector2(0f, yPeters)).y,i);
+                }
+            }
+
+            for (float i = -180f; i < 180f; i++)
+            {
+                if (CoordinatesDictionary.ContainsKey(new GPS(i, 0f)))
+                {
+                    var data = CoordinatesDictionary[new GPS(i, 0f)];
+
+                    float xMerc = data.X_merc;
+                    float xPeters = data.X_peters;
+                    float xAEQD = data.X_aeqd;
+                    /*
+                    animCurveMercator[0].AddKey(i, xMerc);
+                    animCurvePeters[0].AddKey(i, xPeters);
+                    animCurveMercator[2].AddKey(xMerc,i);
+                    animCurvePeters[2].AddKey(xPeters,i);
+                    */
+                    //animCurveMercatorNormalized[0].AddKey(i, GetInverseLerpMinMax(ProjectionType.Mercator, new Vector2(xMerc, 0f)).x);
+                    //animCurvePetersNormalized[0].AddKey(i, GetInverseLerpMinMax(ProjectionType.Peters, new Vector2(xPeters,0f)).x);
+
+                    CurveDictionary[ProjectionType.Mercator][0].AddKey(GetInverseLerpMinMax(ProjectionType.Mercator, new Vector2(xMerc,0f )).x, i);
+                    CurveDictionary[ProjectionType.Peters][0].AddKey(GetInverseLerpMinMax(ProjectionType.Peters, new Vector2(xPeters,0f )).x, i);
+                    CurveDictionary[ProjectionType.AEQD][0].AddKey(GetInverseLerpMinMax(ProjectionType.AEQD, new Vector2(xAEQD, 0f )).x, i);
+                    //animCurveMercatorNormalized[2].AddKey(GetInverseLerpMinMax(ProjectionType.Mercator, new Vector2(xMerc, 0f)).x,i);
+                    //animCurvePetersNormalized[2].AddKey(GetInverseLerpMinMax(ProjectionType.Peters, new Vector2(xPeters, 0f)).x,i);
+                }   
+            }
+        }
+        
+
+
 
         PrintMinMax(ProjectionType.GPS);
         PrintMinMax(ProjectionType.Mercator);
