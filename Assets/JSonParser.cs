@@ -196,28 +196,14 @@ public class JSonParser : MonoBehaviour
 
         if (RegenCurves)
         {
-            /*
-            animCurveMercator = new AnimationCurve[4];
-            animCurveMercator[0] = new AnimationCurve();
-            animCurveMercator[1] = new AnimationCurve();
-            animCurveMercator[2] = new AnimationCurve();
-            animCurveMercator[3] = new AnimationCurve();
-
-            animCurvePeters = new AnimationCurve[4];
-            animCurvePeters[0] = new AnimationCurve();
-            animCurvePeters[1] = new AnimationCurve();
-            animCurvePeters[2] = new AnimationCurve();
-            animCurvePeters[3] = new AnimationCurve();
-            */
+            
             animCurveMercatorNormalized = new AnimationCurve[2];
-            //animCurveMercatorNormalized[0] = new AnimationCurve();
-            //animCurveMercatorNormalized[1] = new AnimationCurve();
+
             animCurveMercatorNormalized[0] = new AnimationCurve();
             animCurveMercatorNormalized[1] = new AnimationCurve();
 
             animCurvePetersNormalized = new AnimationCurve[2];
-            //animCurvePetersNormalized[0] = new AnimationCurve();
-            //animCurvePetersNormalized[1] = new AnimationCurve();
+
             animCurvePetersNormalized[0] = new AnimationCurve();
             animCurvePetersNormalized[1] = new AnimationCurve();
 
@@ -292,7 +278,7 @@ public class JSonParser : MonoBehaviour
     }
 
 
-    public Vector2 GetGPSFrom(ProjectionType type,Vector2 coord)
+    public Vector2 GetGPSFrom(ProjectionType type,Vector2 coord,bool UVSpace = false)
     {
         Vector2 returnCoord = Vector2.zero;
 

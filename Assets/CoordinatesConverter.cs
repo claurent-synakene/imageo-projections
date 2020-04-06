@@ -10,17 +10,18 @@ public class CoordinatesConverter : MonoBehaviour
     public struct Coordinates
     {
         // Constructor
-        public Coordinates(ProjectionType type, Vector2 coord)
+        public Coordinates(ProjectionType type, Vector2 coord,bool UVSpace = false)
         {
             CoordinatesDictionary = new Dictionary<ProjectionType, Vector2>();
             CoordinatesDictionary.Add(type, coord);
+            _UVSpace = UVSpace;
         }
 
         // Enums
 
         // Properties
         public Dictionary<ProjectionType, Vector2> CoordinatesDictionary;
-
+        bool _UVSpace;
         // Methods
         public void CompleteDictionary()
         {
@@ -51,14 +52,18 @@ public class CoordinatesConverter : MonoBehaviour
             {
                 Vector2 coord = CoordinatesDictionary[knownCoordinate];
 
-                Vector2 gps= JSonParser.INSTANCE.GetGPSFrom(knownCoordinate, coord);
+                print(coord.ToString() + _UVSpace.ToString());
+                CoordinatesDictionary.Remove(knownCoordinate);
+
+
+                Vector2 gps= JSonParser.INSTANCE.GetGPSFrom(knownCoordinate, coord, _UVSpace);
                 CoordinatesDictionary.Add(ProjectionType.GPS, gps);
 
                 CoordinatesData accurateData = GetAccurateDataFromGPS(gps);
 
                 foreach (var type in (ProjectionType[])Enum.GetValues(typeof(ProjectionType)))
                 {
-                    if (type != knownCoordinate && type!= ProjectionType.GPS)
+                    if (type!= ProjectionType.GPS)
                     {
                         Vector2 reconstructedAccurateCoordinate = accurateData.GetCoordinates(type);
                         CoordinatesDictionary.Add(type, reconstructedAccurateCoordinate);
@@ -86,7 +91,7 @@ public class CoordinatesConverter : MonoBehaviour
             bottomRightGPS[0] = Mathf.CeilToInt(gps.x);
             bottomRightGPS[1] = Mathf.FloorToInt(gps.y);
 
-            print(gps.ToString());
+            //print(gps.ToString());
             topLeft = JSonParser.INSTANCE.CoordinatesDictionary[new GPS(topLeftGPS[0], topLeftGPS[1])];
             topRight = JSonParser.INSTANCE.CoordinatesDictionary[new GPS(topRightGPS[0], topRightGPS[1])];
             bottomLeft = JSonParser.INSTANCE.CoordinatesDictionary[new GPS(bottomLeftGPS[0], bottomLeftGPS[1])];
@@ -176,14 +181,14 @@ public class CoordinatesConverter : MonoBehaviour
         */
     }
 
-    private Coordinates CreatePoint(ProjectionType type, Vector3 coord)
+    private Coordinates CreatePoint(ProjectionType type, Vector3 coord, bool UVSpace= false)
     {
-        return CreatePoint(type, new Vector2(coord.x, coord.z));
+        return CreatePoint(type, new Vector2(coord.x, coord.z),UVSpace);
     }
 
-    private Coordinates CreatePoint(ProjectionType type, Vector2 coord)
+    private Coordinates CreatePoint(ProjectionType type, Vector2 coord, bool UVSpace = false)
     {
-        Coordinates point = new Coordinates(type, coord);
+        Coordinates point = new Coordinates(type, coord, UVSpace);
 
         point.CompleteDictionary();
         return point;
@@ -195,26 +200,51 @@ public class CoordinatesConverter : MonoBehaviour
         return transformedCoordinates;
     }
 
+    
     [ContextMenu("TransformPointSerie")]
-    public void TransformPoints()
+    public void TransformPoints(ProjectionType projection = ProjectionType.GPS, bool UVSpace = false)
     {
         if (_coordinatesList== null)
-        {
             _coordinatesList = new List<Coordinates>();
-        }
-        _coordinatesList.Clear();
+        else
+            _coordinatesList.Clear();
+        List<Vector2> newPoints = new List<Vector2>();
         foreach (var point in PointList)
         {
-            _coordinatesList.Add(CreatePoint(ProjectionType.GPS, new Vector2(point.y,point.x)));
-
+            Coordinates coords = CreatePoint(projection,UVSpace? new Vector2(point.x, point.y): new Vector2(point.y, point.x), UVSpace);
+            _coordinatesList.Add(coords);
+            newPoints.Add(coords.CoordinatesDictionary[ProjectionType.GPS]);
         }
+
+        if (projection != ProjectionType.GPS)
+        {
+            PointList.Clear();
+            PointList.AddRange(newPoints);
+        }
+        
+
         UpdatePoints();
     }
 
-    private void UpdatePoints()
+    public void ClearPathsTrail()
     {
+        foreach (var type in (ProjectionType[])Enum.GetValues(typeof(ProjectionType)))
+        {
+            Cursors[type].GetComponent<TrailRenderer>().Clear();
+            Cursors[type].GetComponent<TrailRenderer>().enabled = false;
+        }
+
+    }
+    public void UpdatePoints()
+    {
+        foreach (var type in (ProjectionType[])Enum.GetValues(typeof(ProjectionType)))
+        {
+            Cursors[type].GetComponent<TrailRenderer>().enabled = true;
+        }
         StartCoroutine(UpdatePointsCR());
     }
+
+
 
     private IEnumerator UpdatePointsCR()
     {
@@ -228,13 +258,19 @@ public class CoordinatesConverter : MonoBehaviour
                 //if (type != CurrentControl)
                 {
                     Vector2 coord = point.CoordinatesDictionary[type];
+                    print(type.ToString() + " - " + coord.ToString());
                     Vector2 relativeCoord = JSonParser.INSTANCE.GetInverseLerpMinMax(type, coord);
                     Cursors[type].localPosition = new Vector3(relativeCoord.x * scale, 0f, relativeCoord.y * scale);
+                    if (i==0 && type != ProjectionType.GPS )
+                    {
+                        Cursors[type].GetComponent<TrailRenderer>().Clear();
+
+                    }
                 }
             }
             TextGPS2.text = NamesList[i];
             i++;
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(.1f);
         }
     }
 
